@@ -5,7 +5,11 @@ direct-Urca studies and the current BSk24 pairing/PBF emission-regime analysis.
 
 ## View
 
-Open the GitHub Pages URL for the repository. Keyboard controls:
+Open the live presentation:
+
+<https://yangjiayu-work.github.io/bsk24-direct-urca-report/>
+
+Keyboard controls:
 
 - Left/Right, Page Up/Page Down, or Space: navigate slides.
 - `N`: toggle speaker notes.
