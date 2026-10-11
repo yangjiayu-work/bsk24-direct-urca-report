@@ -125,6 +125,24 @@
     .two-col.research { grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); }
     .two-col.research .figure.tall { height: min(65vh, 690px); }
     .two-col.research .callout { margin: 1vh 0; padding-top: .8vh; padding-bottom: .8vh; }
+    .two-col.research .stack { justify-content: flex-start; }
+    .two-col.research .stack p {
+      margin-bottom: .9vh;
+      font-size: clamp(15px, 1.22vw, 22px);
+      line-height: 1.34;
+    }
+    .two-col.research .stack .lead {
+      font-size: clamp(18px, 1.55vw, 27px);
+      line-height: 1.32;
+    }
+    .two-col.research .stack .callout {
+      font-size: clamp(17px, 1.38vw, 24px);
+      line-height: 1.32;
+    }
+    .two-col.research .stack .caveat {
+      font-size: clamp(13px, .95vw, 17px);
+      line-height: 1.32;
+    }
     .stack { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 
     .figure {
