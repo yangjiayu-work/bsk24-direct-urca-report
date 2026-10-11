@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="三篇直接 Urca 研究的 15 分鐘繁體中文 HTML 報告">
+  <title>從直接 Urca 門檻到可觀測冷卻</title>
+  <style>
+    :root {
+      --ink: #eef3f8;
+      --muted: #aebdca;
+      --navy: #071827;
+      --navy-2: #0c2639;
+      --blue: #29a9d6;
+      --orange: #f0a03a;
+      --rose: #d77ca8;
+      --green: #43b894;
+      --paper: #f7f5ef;
+      --paper-ink: #152330;
+      --rule: rgba(238, 243, 248, 0.18);
+      --slide-pad: clamp(28px, 4vw, 72px);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #020b12; color: var(--ink); }
+    body { overflow: hidden; }
+
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background:
+        radial-gradient(circle at 86% 16%, rgba(41,169,214,.12), transparent 25%),
+        linear-gradient(145deg, var(--navy), #04111d 72%);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: var(--slide-pad);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    .slide.active {
+      display: grid;
+      opacity: 1;
+      transform: translateX(0);
+      animation: enter .32s ease-out;
+    }
+    @keyframes enter {
+      from { opacity: 0; transform: translateX(24px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(42px, 6vw, 88px); line-height: 1.08; letter-spacing: -.035em; }
+    h2 { font-size: clamp(31px, 3.6vw, 58px); line-height: 1.12; letter-spacing: -.025em; margin-bottom: 2.2vh; }
+    h3 { font-size: clamp(22px, 2.1vw, 34px); line-height: 1.2; margin-bottom: 1.1vh; }
+    p, li, td, th { font-size: clamp(17px, 1.55vw, 26px); line-height: 1.48; }
+    small, .small { font-size: clamp(13px, 1vw, 17px); line-height: 1.4; }
+    strong { color: #fff; font-weight: 750; }
+    sub, sup { line-height: 0; }
+
+    .eyebrow {
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: clamp(13px, 1vw, 17px);
+      font-weight: 800;
+      margin-bottom: 1.2vh;
+    }
+    .lead { font-size: clamp(21px, 2.15vw, 34px); line-height: 1.42; color: #dce6ee; }
+    .muted { color: var(--muted); }
+    .accent { color: var(--orange); }
+    .blue { color: var(--blue); }
+    .green { color: var(--green); }
+    .rose { color: var(--rose); }
+    .nowrap { white-space: nowrap; }
+
+    .cover {
+      align-content: center;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      gap: 5vw;
+    }
+    .cover-art {
+      margin: 0;
+      width: min(38vw, 610px);
+      justify-self: end;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.36);
+      transform: rotate(-1.2deg);
+    }
+    .cover-art img { display: block; width: 100%; height: auto; }
+    .cover-art img {
+      aspect-ratio: 1.18 / 1;
+      object-fit: cover;
+      object-position: 72% center;
+    }
+    .cover-art.data-cover {
+      width: min(47vw, 790px);
+      padding: 10px;
+      background: var(--paper);
+      transform: none;
+    }
+    .cover-art.data-cover img {
+      aspect-ratio: 2.26 / 1;
+      object-fit: contain;
+      object-position: center;
+    }
+    .cover .subtitle { max-width: 900px; }
+    .byline { margin-top: 6vh; color: var(--muted); }
+
+    .two-col {
+      grid-template-rows: auto 1fr;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr);
+      gap: 2.3vh 4vw;
+    }
+    .two-col > h2 { grid-column: 1 / -1; }
+    .two-col.equal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .two-col.research { grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); }
+    .two-col.research .figure.tall { height: min(65vh, 690px); }
+    .two-col.research .callout { margin: 1vh 0; padding-top: .8vh; padding-bottom: .8vh; }
+    .stack { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+
+    .figure {
+      background: var(--paper);
+      border-radius: 14px;
+      padding: clamp(8px, 1vw, 16px);
+      box-shadow: 0 18px 54px rgba(0,0,0,.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .figure img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .figure.wide { height: min(65vh, 690px); }
+    .figure.tall { height: min(68vh, 720px); }
+    .figure.compact-plot { height: auto; aspect-ratio: 2.45 / 1; }
+
+    .data-focus {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 1.35vh;
+    }
+    .figure.data-hero { height: min(67vh, 700px); }
+    .data-takeaways {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.2vw;
+    }
+    .data-takeaways p {
+      margin: 0;
+      padding: 10px 14px;
+      border-top: 3px solid var(--blue);
+      background: rgba(255,255,255,.055);
+      font-size: clamp(14px, 1.12vw, 20px);
+      line-height: 1.35;
+    }
+    .regime-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .8vw;
+    }
+    .regime-strip div {
+      padding: 9px 12px;
+      border-top: 4px solid var(--regime-color);
+      background: rgba(255,255,255,.055);
+      font-size: clamp(13px, .98vw, 18px);
+      line-height: 1.25;
+    }
+    .regime-strip strong { display: block; margin-bottom: 2px; }
+    .observation-data-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5vw;
+      min-height: 0;
+    }
+    .data-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: 0;
+    }
+    .data-panel h3 {
+      margin: 0;
+      padding: 6px 12px 9px;
+      color: var(--paper-ink);
+      font-size: clamp(18px, 1.5vw, 27px);
+    }
+    .data-panel img { min-height: 0; }
+
+    .concept-figure,
+    .observation-figure {
+      position: relative;
+      margin: 0;
+      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      background: #03111d;
+    }
+    .concept-figure { height: min(63vh, 680px); }
+    .observation-figure { height: min(69vh, 720px); align-self: center; }
+    .concept-figure img,
+    .observation-figure img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .concept-note {
+      position: absolute;
+      left: 18px;
+      bottom: 16px;
+      padding: 8px 12px;
+      border-left: 3px solid var(--orange);
+      background: rgba(3,17,29,.82);
+      color: #d8e5ed;
+      font-size: clamp(12px, .95vw, 16px);
+    }
+    .flavor-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .7em 1.35em;
+      margin-top: 1.6vh;
+      color: #dce6ee;
+      font-size: clamp(15px, 1.15vw, 20px);
+    }
+    .flavor-key span::before {
+      content: "";
+      display: inline-block;
+      width: .72em;
+      height: .72em;
+      border-radius: 50%;
+      margin-right: .42em;
+      background: var(--key-color);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--key-color) 55%, transparent);
+    }
+    .obs-label {
+      position: absolute;
+      bottom: 24px;
+      width: 36%;
+      padding: 14px 18px;
+      background: rgba(3,17,29,.86);
+      backdrop-filter: blur(6px);
+      color: #f5f8fa;
+    }
+    .obs-label.left { left: 3%; border-top: 4px solid var(--blue); }
+    .obs-label.right { right: 3%; border-top: 4px solid var(--orange); }
+    .obs-label strong { display: block; font-size: clamp(19px, 1.55vw, 27px); margin-bottom: 5px; }
+    .obs-label span { font-size: clamp(14px, 1.05vw, 18px); line-height: 1.35; }
+
+    .equation {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: clamp(23px, 2.35vw, 39px);
+      line-height: 1.45;
+      color: white;
+      padding: 1.6vh 0;
+    }
+    .equation.compact { font-size: clamp(19px, 1.8vw, 30px); }
+    .rule { height: 1px; background: var(--rule); margin: 2vh 0; }
+
+    ul { margin: 0; padding-left: 1.15em; }
+    li { margin: .55em 0; }
+    li::marker { color: var(--orange); }
+
+    .metric {
+      display: grid;
+      grid-template-columns: minmax(92px, auto) 1fr;
+      gap: 1vw;
+      align-items: baseline;
+      padding: 1.1vh 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .metric:last-child { border-bottom: 0; }
+    .metric .value { color: var(--orange); font-size: clamp(23px, 2.6vw, 44px); font-weight: 800; }
+    .metric .label { color: #d8e2ea; font-size: clamp(16px, 1.35vw, 23px); }
+
+    .sequence {
+      align-content: center;
+      grid-template-rows: auto 1fr;
+    }
+    .sequence-line {
+      align-self: center;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 2vw;
+    }
+    .sequence-item { min-width: 0; }
+    .sequence-item .num { font-size: clamp(58px, 8vw, 120px); line-height: .9; font-weight: 900; color: rgba(255,255,255,.1); }
+    .sequence-item h3 { color: white; margin-top: -2.2vh; }
+    .connector { color: var(--orange); font-size: clamp(28px, 4vw, 58px); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: var(--blue); font-weight: 750; padding: 1.3vh 1vw; border-bottom: 2px solid rgba(41,169,214,.55); }
+    td { padding: 1.4vh 1vw; vertical-align: top; border-bottom: 1px solid var(--rule); }
+    td:first-child { color: white; font-weight: 750; width: 19%; }
+
+    .split-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; }
+    .split-labels section { border-top: 4px solid var(--blue); padding-top: 2vh; }
+    .split-labels section:last-child { border-color: var(--orange); }
+
+    .callout {
+      border-left: 6px solid var(--orange);
+      padding: 1.2vh 0 1.2vh 1.5vw;
+      margin: 1.8vh 0;
+      font-size: clamp(20px, 1.9vw, 31px);
+      line-height: 1.42;
+      color: #fff;
+    }
+    .caveat { color: #b8c6d1; font-size: clamp(14px, 1.1vw, 18px); line-height: 1.45; }
+
+    .closing {
+      align-content: center;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      gap: 5vw;
+    }
+    .closing .takeaway { font-size: clamp(28px, 3.3vw, 54px); line-height: 1.3; max-width: 980px; }
+    .closing .final-number { font-size: clamp(110px, 18vw, 260px); color: rgba(41,169,214,.18); font-weight: 900; align-self: center; justify-self: center; }
+
+    .slide-index {
+      position: fixed;
+      right: 2.2vw;
+      bottom: 2vh;
+      z-index: 30;
+      color: rgba(255,255,255,.58);
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+    }
+    .progress {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      height: 4px;
+      width: 0;
+      z-index: 31;
+      background: linear-gradient(90deg, var(--blue), var(--orange));
+      transition: width .25s ease;
+    }
+    .help {
+      position: fixed;
+      left: 2vw;
+      bottom: 1.5vh;
+      z-index: 30;
+      color: rgba(255,255,255,.38);
+      font-size: 12px;
+    }
+
+    .notes-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      width: min(38vw, 620px);
+      z-index: 50;
+      background: rgba(247,245,239,.98);
+      color: var(--paper-ink);
+      padding: 32px;
+      overflow: auto;
+      transform: translateX(101%);
+      transition: transform .2s ease;
+      box-shadow: -18px 0 60px rgba(0,0,0,.35);
+    }
+    .notes-panel.open { transform: translateX(0); }
+    .notes-panel h3 { color: #0c2639; }
+    .notes-panel p { font-size: 18px; }
+    .speaker-notes { display: none; }
+
+    @media (max-width: 900px), (max-aspect-ratio: 4/3) {
+      body { overflow: auto; }
+      .deck { min-height: 100vh; height: auto; }
+      .slide, .slide.active { position: relative; min-height: 100vh; display: none; }
+      .slide.active { display: grid; overflow: auto; }
+      .two-col, .two-col.equal, .cover, .closing { grid-template-columns: 1fr; }
+      .cover-art { display: none; }
+      .figure.wide, .figure.tall { height: auto; min-height: 36vh; }
+      .figure.data-hero { height: auto; min-height: 42vh; }
+      .data-takeaways, .regime-strip, .observation-data-grid { grid-template-columns: 1fr; }
+      .concept-figure, .observation-figure { height: auto; min-height: 48vh; }
+      .obs-label { position: static; width: auto; margin: 10px; }
+      .sequence-line { grid-template-columns: 1fr; }
+      .connector { transform: rotate(90deg); justify-self: center; }
+      .notes-panel { width: min(88vw, 620px); }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      body { overflow: visible; background: white; }
+      .deck { height: auto; }
+      .slide, .slide.active {
+        display: grid !important;
+        position: relative;
+        width: 16in;
+        height: 9in;
+        break-after: page;
+        opacity: 1;
+        transform: none;
+        animation: none;
+        background: linear-gradient(145deg, var(--navy), #04111d 72%);
+      }
+      .slide-index, .progress, .help, .notes-panel { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck">
+    <section class="slide cover active" data-title="封面">
+      <div>
+        <div class="eyebrow">15 分鐘研究報告</div>
+        <h1>從直接 Urca 門檻<br>到可觀測冷卻</h1>
+        <p class="lead subtitle">三篇工作串接：光度主導、源端味組成與星體條件式反演</p>
+        <p class="byline">Jia-Yu Young · T. C. Liu<br><span class="small">Department of Applied Physics, National Pingtung University</span></p>
+      </div>
+      <figure class="cover-art data-cover"><img src="assets/paper2_d_to_flavor.png" alt="DU 主導分率與源端電子、緲子能量光度分配的定量關係"></figure>
+      <aside class="speaker-notes">
+        <p><strong>時間：0:30</strong></p>
+        <p>今天把三篇工作視為同一條問題鏈。第一篇回答 DU 何時開始控制核心中微子光度，第二篇追蹤它如何改變源端味組成，第三篇再把這些量連到兩個星體案例。</p>
+      </aside>
+    </section>
+
+    <section class="slide sequence" data-title="三篇工作的共同問題">
+      <h2>三篇工作的共同問題</h2>
+      <div class="sequence-line">
+        <article class="sequence-item">
+          <div class="num">01</div>
+          <h3>DU 何時主導</h3>
+          <p>把局部運動學門檻轉成全星積分光度的操作性質量。</p>
+        </article>
+        <div class="connector">›</div>
+        <article class="sequence-item">
+          <div class="num">02</div>
+          <h3>主導後發出哪些味</h3>
+          <p>分開電子、緲子與濤子源端能量光度，追蹤質量與 EOS 依賴。</p>
+        </article>
+        <div class="connector">›</div>
+        <article class="sequence-item">
+          <div class="num">03</div>
+          <h3>觀測要求多大的 DU 核</h3>
+          <p>用 J0554 與 MXB 1659–29 建立條件式質量與作用體積反演。</p>
+        </article>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:00</strong></p>
+        <p>三篇不是三個獨立題目。第一篇提供座標 D 與 M50、M90、M99。第二篇把 D 與電子、緲子 DU 分帳結合。第三篇把同一套結構與光度拿去問觀測相容區域。</p>
+      </aside>
+    </section>
+
+    <section class="slide two-col" data-title="論文一：從開啟到光度主導">
+      <h2>論文一：從開啟到光度主導</h2>
+      <div class="stack">
+        <p class="lead">DU 在星心剛被允許時，發射區域的體積仍趨近零。局部高發射率因此不能直接回答全星光度比例。</p>
+        <div class="equation">𝒟 = L<sub>DU</sub><sup>∞</sup> / (L<sub>DU</sub><sup>∞</sup> + L<sub>slow</sub><sup>∞</sup>)</div>
+        <div class="rule"></div>
+        <p><strong>M<sub>50</sub></strong>：快、慢過程各占一半</p>
+        <p><strong>M<sub>90</sub></strong>：DU-only 遺漏 10% 核心中微子光度</p>
+        <p><strong>M<sub>99</sub></strong>：DU-only 遺漏 1% 核心中微子光度</p>
+      </div>
+      <figure class="figure tall"><img src="assets/paper1_operational.png" alt="DU 主導分率及 M50、M90、M99 的操作性定義"></figure>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:20</strong></p>
+        <p>先帶聽眾看黑色曲線。橫軸是超過電子 DU 門檻的相對質量，縱軸是 DU 占核心中微子光度的比例。門檻在最左端，M50、M90、M99 則回答不同精度的光度近似。這些量不等於完整冷卻曲線誤差。</p>
+      </aside>
+    </section>
+
+    <section class="slide data-focus" data-title="論文一：EOS 差異在門檻位置">
+      <h2>論文一：EOS 決定「何時開啟」，轉換帶寬卻相近</h2>
+      <figure class="figure data-hero"><img src="assets/paper1_eos_comparison.png" alt="BSk22、BSk24、BSk25 與 BSk26 的 DU 主導分率、電子 DU 門檻及 M50、M90、M99 比較"></figure>
+      <div class="regime-strip" aria-label="BSk 模型的電子 DU 門檻與主導質量比較">
+        <div style="--regime-color:#1489c9"><strong>BSk22｜最早開啟</strong>M<sub>DU,e</sub>=1.14766；M<sub>50</sub>=1.14789<br>M<sub>99</sub>−M<sub>50</sub>=0.00472 M<sub>⊙</sub></div>
+        <div style="--regime-color:#e46f00"><strong>BSk24｜中間門檻</strong>M<sub>DU,e</sub>=1.59754；M<sub>50</sub>=1.59778<br>M<sub>99</sub>−M<sub>50</sub>=0.00499 M<sub>⊙</sub></div>
+        <div style="--regime-color:#00a67d"><strong>BSk25｜最晚開啟</strong>M<sub>DU,e</sub>=1.62462；M<sub>50</sub>=1.62483<br>M<sub>99</sub>−M<sub>50</sub>=0.00428 M<sub>⊙</sub></div>
+        <div style="--regime-color:#8b949c"><strong>BSk26｜負對照</strong>採用的穩定／因果分支沒有核子 DU，因此不存在 M<sub>50</sub>、M<sub>90</sub>、M<sub>99</sub></div>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:35</strong></p>
+        <p>這一頁要分開兩種 EOS 效應。第一，門檻位置差很多：BSk22 在 1.15 太陽質量附近就開啟，BSk24／25 要到約 1.60／1.62；BSk26 的採用物理分支完全不開啟。第二，一旦電子 DU 開啟，三個可達模型由 M50 走到 M99 都只需約 0.0043--0.0050 太陽質量。也就是 EOS 主要決定「有沒有、在哪裡開啟」，而正則中心幾何造成的 LDU ∝ ΔM^(3/2) 讓後續轉換普遍很窄。這仍是正常態、尖銳門檻基準。</p>
+      </aside>
+    </section>
+
+    <section class="slide data-focus" data-title="論文二：DU 主導如何改變源端味組成">
+      <h2>論文二：源端味組成的分解</h2>
+      <figure class="figure data-hero"><img src="assets/paper2_d_to_flavor.png" alt="左圖為 DU 主導分率到源端味比例的映射，右圖為 BSk22、BSk24、BSk25 的電子與緲子 DU 光度分配"></figure>
+      <div class="data-takeaways">
+        <p><strong>𝒟 ≈ 0：</strong>慢過程決定源端比例，電子約 2/3、緲子約 1/3，濤子僅小量。</p>
+        <p><strong>𝒟 → 1：</strong>慢過程被稀釋；在緲子 DU 開啟前，源端幾乎全為電子通道。</p>
+        <p><strong>M &gt; M<sub>DU,μ</sub>：</strong>緲子 DU 子核心增長，電子／緲子 DU 逐步接近約 54%／46%。</p>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:20</strong></p>
+        <p>這是三篇工作最核心的數據橋樑。先看左圖：橫軸是第一篇定義的 DU 主導分率，直接映射到全過程源端向量。再看右圖：質量超過緲子 DU 門檻後，緲子份額才由零成長。實線與點線相加為一；這裡的比例是源端能量光度，不是粒子數，也不是到達地球後的振盪比例。</p>
+      </aside>
+    </section>
+
+    <section class="slide data-focus" data-title="論文二：四個光度區域">
+      <h2>論文二：四個光度區域</h2>
+      <figure class="figure data-hero"><img src="assets/paper2_four_regimes.png" alt="BSk22 至 BSk26 的實算源端能量光度比例與四個操作性放射區域"></figure>
+      <div class="regime-strip" aria-label="四個操作性光度區域">
+        <div style="--regime-color:#7b8c98"><strong>I　慢過程</strong>L<sub>ν</sub> ≈ L<sub>ModU</sub> + L<sub>Brem</sub></div>
+        <div style="--regime-color:#1d86c8"><strong>II　慢 → eDU</strong>L<sub>slow</sub> 與 L<sub>eDU</sub> 競爭，𝒟 &lt; 0.5</div>
+        <div style="--regime-color:#05a67a"><strong>III　eDU 主導</strong>L<sub>eDU</sub> ≫ L<sub>slow</sub>，緲子 DU 尚小</div>
+        <div style="--regime-color:#e59a00"><strong>IV　雙通道 DU</strong>L<sub>ν</sub> ≈ L<sub>eDU</sub> + L<sub>μDU</sub></div>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:25</strong></p>
+        <p>沿每個面板由左往右讀，底下四格就是對應的放射模式。電子味在 eDU 主導時快速靠近一，再隨緲子 DU 核心成長下降；綠色濤子份額只來自慢過程。BSk22、24、25 依序穿越四區，BSk26 是停留於慢過程的負對照。四區是積分光度分類，不是物質相變；點是實算恆星，連線只是視覺引導。</p>
+      </aside>
+    </section>
+
+    <section class="slide data-focus" data-title="論文三：兩種互補觀測">
+      <h2>論文三：兩種互補觀測</h2>
+      <div class="observation-data-grid">
+        <figure class="figure data-panel">
+          <h3>J0554：表面光度 → 質量—真實年齡相容帶</h3>
+          <img src="assets/paper3_j0554.png" alt="J0554 的質量與真實年齡相容區域定量圖">
+        </figure>
+        <figure class="figure data-panel">
+          <h3>MXB 1659–29：核心功率 → 質量與 DU 體積</h3>
+          <img src="assets/paper3_mxb.png" alt="MXB 1659–29 的溫度相依質量與電子 DU 體積反演定量圖">
+        </figure>
+      </div>
+      <div class="data-takeaways">
+        <p><strong>同一套微物理：</strong>兩例都使用 EOS、TOV 結構與逐通道積分光度。</p>
+        <p><strong>不同觀測切片：</strong>J0554 限制表面熱史；MXB 較直接限制核心 L<sub>ν</sub><sup>∞</sup>。</p>
+        <p><strong>共同限制：</strong>目前都是條件式反演，並非直接量到 DU 或精確質量。</p>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:00</strong></p>
+        <p>這一頁不再使用概念圖，直接先讓聽眾看兩個反演結果。左圖的斜帶是 J0554 的質量—真實年齡退化；右圖顯示 MXB 在不同核心溫度下所需的質量與 DU proper volume。下一兩頁再各自放大並報數字。</p>
+      </aside>
+    </section>
+
+    <section class="slide two-col" data-title="J0554：質量與真實年齡相容帶">
+      <h2>J0554：質量與真實年齡相容帶</h2>
+      <figure class="figure tall"><img src="assets/paper3_j0554.png" alt="BSk24 下 J0554 的質量與真實年齡相容區域"></figure>
+      <div class="stack">
+        <div class="metric"><span class="value">1.5984–1.5996</span><span class="label">固定 51.7 kyr 時的相容質量，M<sub>⊙</sub></span></div>
+        <div class="metric"><span class="value">23.5–45.7</span><span class="label">固定 1.6 M<sub>⊙</sub> 時的相容真實年齡，kyr</span></div>
+        <div class="metric"><span class="value">0.406</span><span class="label">中央解的電子 DU 核半徑，km</span></div>
+        <p class="callout">小型 DU 核提供 99.9974% 核心中微子光度，但當時 L<sub>ν</sub>/L<sub>γ</sub> ≈ 0.17。</p>
+        <p class="caveat">因此核心的 DU 主導，不等於星體當下由中微子主導總能量損失。</p>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:35</strong></p>
+        <p>先讀色階，再讀斜向相容帶。固定年齡得到狹窄質量切片，固定質量則得到年齡範圍。最後用 Lν/Lγ 說明前兩篇的 D 只回答核心中微子光度組成，不能直接替代全熱演化。</p>
+      </aside>
+    </section>
+
+    <section class="slide two-col" data-title="MXB 1659–29：核心功率反演">
+      <h2>MXB 1659–29：核心功率反演</h2>
+      <figure class="figure tall"><img src="assets/paper3_mxb.png" alt="MXB 1659–29 的溫度相依質量與電子 DU 體積反演"></figure>
+      <div class="stack">
+        <div class="eyebrow">L<sub>ν</sub><sup>∞</sup> = 3 × 10<sup>34</sup> erg s<sup>−1</sup></div>
+        <p><strong>T<sub>core</sub><sup>∞</sup> = 2.5 × 10<sup>7</sup> K</strong> 時：</p>
+        <p>BSk22 / 24 / 25 所需質量為<br><span class="accent">1.188 / 1.631 / 1.654 M<sub>⊙</sub></span></p>
+        <p>電子 DU proper-volume fraction 僅<br><span class="accent">0.660% / 0.425% / 0.369%</span></p>
+        <p class="callout">BSk24 的核心溫度由 2.0 升至 3.0 × 10<sup>7</sup> K，反演質量由 1.676 降至 1.614 M<sub>⊙</sub>。</p>
+        <p class="caveat">這是三點條件式敏感度，不是核心溫度後驗；BSk26 在同一基準不可達。</p>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:35</strong></p>
+        <p>先看左圖的質量，再看右圖所需體積。高溫時單位體積發射更強，所以較小的 DU 區就能達到同一功率，反演質量隨之下降。這一頁的主旨是「小體積可以提供大功率，但質量反演對溫度敏感」。</p>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="三篇工作的分工與共同貢獻">
+      <h2>三篇工作的分工與共同貢獻</h2>
+      <table style="align-self:center">
+        <thead>
+          <tr><th>研究層次</th><th>輸入</th><th>得到的量</th><th>新增的判讀能力</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>光度主導</td><td>EOS、恆星質量、核心溫度</td><td>𝒟 與 M<sub>50</sub> / M<sub>90</sub> / M<sub>99</sub></td><td>區分運動學開啟與積分光度主導</td></tr>
+          <tr><td>味組成</td><td>逐通道中微子光度</td><td>f<sub>ν</sub><sup>S</sup>、α<sub>DU</sub>、四個光度區域</td><td>追蹤電子與緲子 DU 的質量演化</td></tr>
+          <tr><td>星體反演</td><td>表面光度或核心功率錨點</td><td>質量、年齡與 DU 作用體積</td><td>把模型結果轉成可被後續觀測檢驗的區域</td></tr>
+        </tbody>
+      </table>
+      <p class="callout" style="align-self:end">共同結論：極小的中心 DU 核足以改變核心中微子光度與熱觀測，但反演必須保留模型條件。</p>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:10</strong></p>
+        <p>這張是三篇之間的橋。每一篇都把上一層的輸出當作下一層的輸入。這也說明它們可以分開投稿，但在口頭報告中適合以一個連續故事呈現。</p>
+      </aside>
+    </section>
+
+    <section class="slide two-col research" data-title="目前研究成果：配對後的放射機制相圖">
+      <h2>目前研究成果：配對後的放射機制相圖</h2>
+      <figure class="figure tall">
+        <img src="assets/current_emission_regime_phase_map.png" alt="BSk24 不同核子配對模型下，質量與紅移核心溫度平面中的 DU、PBF 與混合放射區域">
+      </figure>
+      <div class="stack">
+        <p class="lead">同一個 BSk24 EOS，<strong>不同 pairing 模型會重新安排 DU 與 PBF 的主導區域</strong>。</p>
+        <p><strong>先讀座標與顏色：</strong>X 軸是重力質量，Y 軸是紅移核心溫度。藍色代表 DU ≥ 90%，橘色代表 PBF ≥ 90%，紫色是 DU–PBF 混合區。白線標出 S<sub>DU</sub> = 0.1 與 0.9。</p>
+        <p><strong>目前最清楚的結構：</strong>多數參數區仍由 DU 主導；但 D16a+CCDK 在低溫、剛越過 DU 門檻時，隨質量增加依序出現 PBF 主導、混合、DU 主導。</p>
+        <p><strong>抑制不等於退出主導：</strong>在 1.6 M<sub>☉</sub>，TTav+CCDK 與 D16a+CCDK 都有 S<sub>DU</sub> ≈ 5.68×10<sup>−6</sup>，但 F<sub>DU</sub> 分別為 99.665% 與 10.204%。</p>
+        <p class="callout">因此 M<sub>50</sub>、M<sub>90</sub>、M<sub>99</sub> 可擴充成質量—溫度—pairing 的條件式主導邊界。</p>
+        <p class="caveat">183,872 列後處理已通過；控制函數拼接、低溫 1.60% 收斂差與 PBF 處方仍是科學 Gate。彩色階梯不是已收斂的物理相變。</p>
+      </div>
+      <aside class="speaker-notes">
+        <p><strong>時間：1:30</strong></p>
+        <p>這張是最新的 BSk24 放射機制相圖。五個面板只改變中子與質子的 pairing gap，X 軸是質量，Y 軸是紅移核心溫度，不是年齡。底色回答誰提供至少九成核心中微子光度；白線回答 DU 自身被壓低多少。兩種資訊必須一起讀。最清楚的例子在 D16a+CCDK 左下角：增加質量時，由 PBF 主導經過競爭帶，再進入 DU 主導。另一方面，TTav+CCDK 顯示 DU 即使被壓低超過十萬倍，仍可能因其他通道更弱而占總光度九成以上。目前後處理與來源重現已通過，但控制函數拼接、低溫收斂及 PBF bracket 尚未解除，所以這是條件式核心光度地圖，不是完整冷卻相圖。</p>
+      </aside>
+    </section>
+
+    <section class="slide closing" data-title="結論">
+      <div>
+        <div class="eyebrow">結論</div>
+        <p class="takeaway">直接 Urca 的研究需要分清三件事：<span class="blue">何時被允許</span>、<span class="accent">何時主導積分光度</span>，以及<span class="rose">何時能解釋特定熱觀測</span>。</p>
+        <p class="lead">三篇工作分別建立這三層的定量座標，並共同預測：極小的中心 DU 核可能具有巨大的中微子光度效應。</p>
+        <p class="muted">謝謝聆聽</p>
+      </div>
+      <div class="final-number">𝒟</div>
+      <aside class="speaker-notes">
+        <p><strong>時間：0:40</strong></p>
+        <p>用三個層次收尾。聽眾只需記住 onset、dominance 與 observation 是三個不同問題，而 D 與操作性質量把它們連起來。</p>
+      </aside>
+    </section>
+  </main>
+
+  <div class="help">← → 翻頁　N 講稿　F 全螢幕</div>
+  <div class="slide-index" id="slideIndex">1 / 12</div>
+  <div class="progress" id="progress"></div>
+  <aside class="notes-panel" id="notesPanel" aria-live="polite"></aside>
+
+  <script>
+    (() => {
+      const slides = [...document.querySelectorAll('.slide')];
+      const indexEl = document.getElementById('slideIndex');
+      const progressEl = document.getElementById('progress');
+      const notesPanel = document.getElementById('notesPanel');
+      let current = Math.max(0, Math.min(slides.length - 1, Number(location.hash.slice(1)) - 1 || 0));
+
+      function show(next) {
+        current = Math.max(0, Math.min(slides.length - 1, next));
+        slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+        indexEl.textContent = `${current + 1} / ${slides.length}`;
+        progressEl.style.width = `${((current + 1) / slides.length) * 100}%`;
+        const notes = slides[current].querySelector('.speaker-notes');
+        notesPanel.innerHTML = `<h3>${slides[current].dataset.title}</h3>${notes ? notes.innerHTML : '<p>本頁沒有講稿。</p>'}`;
+        history.replaceState(null, '', `#${current + 1}`);
+        document.title = `${slides[current].dataset.title} · 從直接 Urca 門檻到可觀測冷卻`;
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      }
+
+      document.addEventListener('keydown', event => {
+        if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) { event.preventDefault(); show(current + 1); }
+        if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) { event.preventDefault(); show(current - 1); }
+        if (event.key === 'Home') show(0);
+        if (event.key === 'End') show(slides.length - 1);
+        if (event.key.toLowerCase() === 'n') notesPanel.classList.toggle('open');
+        if (event.key.toLowerCase() === 'f') toggleFullscreen();
+        if (event.key === 'Escape') notesPanel.classList.remove('open');
+      });
+
+      let touchX = null;
+      document.addEventListener('touchstart', e => { touchX = e.changedTouches[0].screenX; }, {passive:true});
+      document.addEventListener('touchend', e => {
+        if (touchX === null) return;
+        const delta = e.changedTouches[0].screenX - touchX;
+        if (Math.abs(delta) > 60) show(current + (delta < 0 ? 1 : -1));
+        touchX = null;
+      }, {passive:true});
+
+      window.addEventListener('hashchange', () => {
+        const requested = Number(location.hash.slice(1));
+        if (Number.isFinite(requested)) show(requested - 1);
+      });
+      show(current);
+    })();
+  </script>
+</body>
+</html>
